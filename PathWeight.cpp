@@ -51,11 +51,12 @@ namespace ariel{
     }   
 
     // Function to find the shortest path in a weighted graph with negative edges using the Bellman-Ford algorithm
+    // Function to find the shortest path in a weighted graph with negative edges using the Bellman-Ford algorithm
     string PathWeight::shortestPathBellmanFord(const Graph& g, size_t start, size_t end, bool flag) {
         size_t numV = g.getNumV();
         const vector<vector<int>> &inputMatrix = g.getMatrix();
-        vector<int> d(numV, numeric_limits<int>::max());
-        vector<int> parent(numV, -1);
+        vector<int> d(numV, numeric_limits<int>::max()); // stores the shortest distance from the start vertex to each vertex.
+        vector<int> parent(numV, -1); // stores the parent of each vertex in the path.
 
         d[start] = 0;
 
@@ -77,58 +78,74 @@ namespace ariel{
 
         // Check for negative-weight cycles (one more round of relaxtion)
         bool negativeCycleFound = false;
+        int cycleStart = static_cast<int>(numV);
         for (size_t u = 0; u < numV; ++u) {
             for (size_t v = 0; v < numV; ++v) {
                 // Check if there's an edge from u to v and if d[u] isn't max to add weight
                 if (inputMatrix[u][v] != 0 && d[u] != numeric_limits<int>::max()) { 
                     int weight = inputMatrix[u][v];
                     if (d[u] + weight < d[v]) {
-                        // if flag is true the function got a call from negativeCycle(g)
-                        if(flag){
-                            vector<int> cycle;
-                            int currentVer = static_cast<int>(u);
-                            // Track back the cycle
-                            do {
-                            cycle.push_back(currentVer);
-                            currentVer = parent[size_t(currentVer)];
-                            } while (currentVer != static_cast<int>(u) && currentVer != -1);
-
-                            cycle.push_back(static_cast<int>(u)); // Add the start vertex of the cycle 
-                            reverse(cycle.begin(), cycle.end()); // Reverse the cycle to get the correct order
-                            string cycleStr;
-                            for (size_t i = 0; i < cycle.size(); ++i) {
-                                if (i > 0) cycleStr += "->";
-                                    cycleStr += to_string(cycle[i]);
-                            }
-                            negativeCycleFound = true;
-                            return "Negative Cycle: " + cycleStr;  // Return the negative cycle
-                        }
-                        else {
-                            return "error: negative cycle";
-                        }
-                    }
+                        cycleStart = u;
+                        negativeCycleFound = true;
+                        break;
+                    }   
                 }
             }
+            if (negativeCycleFound) break;
         }
+        if (negativeCycleFound) {
+            // if flag is true the function got a call from negativeCycle(g)
+            if(flag){
+                vector<int> cycle; // A vector to store the vertices in the negative cycle.
+                vector<bool> visited(numV, false);
+                int currentVer = cycleStart; //  the vertex where the negative cycle was detected.
+                // The loop continues until it revisits a vertex, indicating the start of a cycle
+                while (!visited[size_t(currentVer)]) { 
+                    visited[size_t(currentVer)] = true;
+                    currentVer = parent[size_t(currentVer)];
+                }
+
+                int cycleEnd = currentVer; // marking the vertex where the cycle was detected.
+                // The cycle is constructed by tracing back from cycleEnd to itself.
+                cycle.push_back(cycleEnd);
+                currentVer = parent[size_t(cycleEnd)];
+                while (currentVer != cycleEnd) {
+                    cycle.push_back(currentVer);
+                    currentVer = parent[size_t(currentVer)];
+                }
+                cycle.push_back(cycleEnd);
+                 
+                // The cycle vector is reversed to present the cycle in the correct order.
+                reverse(cycle.begin(), cycle.end());
+                string cycleStr;
+                for (size_t i = 0; i < cycle.size(); ++i) {
+                    if (i > 0) cycleStr += "->";
+                    cycleStr += to_string(cycle[i]);
+                }
+                return "Negative Cycle: " + cycleStr;
+            } else {
+                return "error: negative cycle";
+            }
+        }
+
         if (!negativeCycleFound && flag) {
             return "No negative cycle found";
         }
-        
-        // Check if there's no path from the start vertex to the end vertex
+
         if (d[end] == numeric_limits<int>::max()) {
             return "-1";
         }
 
         // Construct the shortest path string
-        string pathStr = to_string(end);
-        size_t current = end;
-        while (parent[current] != parent[start]) {
-            pathStr = to_string(parent[current]) + "->" + pathStr;
-            current = size_t(parent[current]);
+        string pathStr;
+        int current = size_t(end);
+        while (current != -1) {
+            pathStr = to_string(current) + (pathStr.empty() ? "" : "->" + pathStr);
+            current = parent[size_t(current)];
         }
         if (d[end]<0) return "Negative path: "+ pathStr; // Return negative path if the distance is negative
-        
-        return pathStr;
+    
+        return pathStr;   
     }  
     
 };
