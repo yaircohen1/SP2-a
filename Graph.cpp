@@ -10,7 +10,7 @@ namespace ariel {
 
     // Function to load a graph from an input matrix
     void Graph::loadGraph(const vector<vector<int>> &inputMatrix) {
-        //Check if inputMatrix is valid
+        // Check if inputMatrix is valid
         // Check if the num of rows (mat.size) == num of columns (mat[0].size)
         if (inputMatrix.size() != inputMatrix[0].size()) {
             throw invalid_argument ("Invalid graph: The graph is not a square matrix.");
@@ -18,6 +18,12 @@ namespace ariel {
         // Check if inputMatrix is empty (it has zero rows)
         if(inputMatrix.empty()){
             throw invalid_argument ("Invalid graph:: the matrix is empty");
+        }
+        // Check if there are no diagonal elements
+        for(size_t i = 0; i < inputMatrix.size(); i++) {
+            if (inputMatrix[i][i] != 0) {
+                throw invalid_argument("Invalid graph: The matrix has non-zero diagonal elements.");
+            }
         }
         // Load the matrix and set the number of vertices
         this->Matrix = inputMatrix;
